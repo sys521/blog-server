@@ -7,7 +7,7 @@ const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
 
 const index = require('./routes/index')
-const users = require('./routes/users')
+const api = require('./api/index.js')
 const init_sql = require('./db/index.js')
 
 const session = require('koa-session-minimal')
@@ -28,7 +28,7 @@ app.use(session({
   key: 'user',
   store: new MysqlStore(config),
   cookie: {
-    maxage: limit_time
+    maxAge: limit_time
   }
 }))
 app.use(json())
@@ -36,7 +36,7 @@ app.use(logger())
 app.use(require('koa-static')(__dirname + '/public'))
 
 app.use(views(__dirname + '/views', {
-  extension: 'pug'
+  map: {html : 'ejs'}
 }))
 
 // logger
@@ -49,7 +49,9 @@ app.use(async (ctx, next) => {
 
 // routes
 app.use(index.routes(), index.allowedMethods())
-app.use(users.routes(), users.allowedMethods())
+// api
+
+app.use(api.routes(),api.allowedMethods())
 
 // error-handling
 app.on('error', (err, ctx) => {
