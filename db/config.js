@@ -1,8 +1,14 @@
-let config = {
+const Sequelize = require('sequelize')
+const sequelize = new Sequelize('blog', 'root', '123456', {
   host: 'localhost',
-  user: 'root',
-  password: '123456',
-  database: 'blog'
-}
+  dialect: 'mysql',
+  port: 3306,
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  }
+})
 
-module.exports = config
+module.exports = sequelize

@@ -22,8 +22,9 @@
     "koa-session-minimal": "^3.0.4",
     "koa-static": "^3.0.0",
     "koa-views": "^5.2.1",
-    "mysql": "^2.15.0",
-    "pug": "^2.0.0-rc.1"
+    "mysql2": "^1.5.2",
+    "pug": "^2.0.0-rc.1",
+    "sequelize": "^4.33.0"
   },
   "devDependencies": {
     "nodemon": "^1.8.1"
