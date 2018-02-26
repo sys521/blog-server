@@ -1,10 +1,23 @@
-success = {
+const fs = require('fs')
+
+const deleteFile = function (filePath, name) {
+  console.log(filePath)
+  if (fs.existsSync(filePath)) {
+    let files = fs.readdirSync(filePath)
+    if (files.indexOf(name) !== -1) {
+      let curPath = filePath + '/' + name
+      fs.unlinkSync(curPath)
+    }
+  }
+}
+
+const success = {
   status: 'success',
   message: '',
   data: ''
 }
 
-fail = {
+const fail = {
   status: 'fail',
   message: '',
   data: ''
@@ -20,5 +33,6 @@ function sendFail (text, obj) {
 
 module.exports = {
   sendOk,
-  sendFail
+  sendFail,
+  deleteFile
 }

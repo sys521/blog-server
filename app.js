@@ -4,6 +4,7 @@ const views = require('koa-views')
 const json = require('koa-json')
 const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
+
 const logger = require('koa-logger')
 
 const index = require('./routes/index')
@@ -24,6 +25,8 @@ onerror(app)
 app.use(bodyparser({
   enableTypes:['json', 'form', 'text']
 }))
+
+
 
 // session 保存到mysql
 const config = {
@@ -60,8 +63,9 @@ app.use(async (ctx, next) => {
 })
 //  session 
 app.use(async (ctx, next) => {
-  console.log(ctx.request.url)
+
   let urlArr = ctx.request.url.split('/')
+  console.log(urlArr)
   if (urlArr[1] === 'user' && urlArr[2] !== 'check' && urlArr[2] !== 'add' && urlArr[2] !== 'login') {
     if (ctx.session.user && ctx.session.user.name) {
       await next()
