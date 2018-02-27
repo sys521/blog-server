@@ -15,6 +15,8 @@ const ARTICAL = sequelize.define('articals', {
   artical_name: {type: Sequelize.STRING},
   artical_abstract: {type: Sequelize.STRING},
   artical_content: {type: Sequelize.TEXT},
+  artical_status: {type: Sequelize.STRING},
+  artical_clicktimes: {type: Sequelize.INTEGER},
   user_id: {
     type: Sequelize.INTEGER,
     references: {
@@ -59,6 +61,18 @@ const COMMENT = sequelize.define('comments', {
       key: 'user_id'
     }
   }
+})
+
+const ARTICALIMGS = sequelize.define('articalimgs', {
+  imgs_id: {type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
+  artical_id: {
+    type: Sequelize.INTEGER,
+    references: {
+      model: ARTICAL,
+      key: 'artical_id'
+    }
+  },
+  imgs_url: {type: Sequelize.STRING}
 })
 
 const CONCERN = sequelize.define('concern', {

@@ -1,26 +1,15 @@
 const router = require('koa-router')()
-const {sendOk, sendFail, deleteFile} = require('./tool.js')
+const {sendOk, 
+  sendFail, 
+  deleteFile,
+  createDir,
+  createFile} = require('./tool.js')
 const {USER} = require('../db/model.js')
 const fs = require('fs')
-const multer = require('koa-multer')
 const path = require('path')
-var storage = multer.diskStorage({  
-  //文件保存路径  
-  destination: function (req, file, cb) {  
-    cb(null, path.join(__dirname, '../public'))
-  },  
-  //修改文件名称  
-  filename: function (req, file, cb) {  
-    var fileFormat = (file.originalname).split(".")
-    let cookieIndex = req.rawHeaders.indexOf('cookie')
-    if (cookieIndex !== -1) {
-      let cookieContent = req.rawHeaders[cookieIndex + 1].split('=')[1]
-      cb(null, cookieContent + '-' + Date.now() + "." + fileFormat[fileFormat.length - 1])
-    }
-  }
-})  
-const upload = multer({storage: storage })
+const {uploadHeaderImg, uploadArticalImg} = require('../storage')
 
+// 用户相关
 router.post('/user/check', async (ctx, next) => {
   let u_name = ctx.request.body.u_name
   if (!u_name ) {
@@ -74,17 +63,57 @@ router.get('/user/info', async (ctx, next) => {
     ctx.response.body = sendFail('未找到该用户', 'fail')
   }
 })
-router.post('/user/update/header', upload.single('user_header'), async (ctx, next) => {
-  console.log(ctx.req.file)
+router.post('/user/update/header', uploadHeaderImg.single('user_header'), async (ctx, next) => {
   let fileName = ctx.req.file.filename
   console.log(fileName)
   let userName = ctx.session.user.name
   let oldFile = await USER.findAll({attributes: ['user_header'], where: {user_name: userName}})
   if (oldFile[0].dataValues) {
-    let filePath = path.join(__dirname, '../public')
-    deleteFile(filePath, oldFile[0].dataValues.user_header)
+    deleteFile(path.join(__dirname, '../public/header-imgs'), oldFile[0].dataValues.user_header)
   }
   let res = await USER.update({'user_header': fileName},{where: {user_name: userName}})
   ctx.response.body = sendOk('success', fileName)
+})
+router.post('/user/displayname/update', async (ctx) => {
+  let {user_displayName} = ctx.request.body
+  let userName = ctx.session.user.name
+  if (user_displayName) {
+    let res = await USER.update({'user_displayName': user_displayName}, {where: {user_name: userName}})
+    if (res[0] === 1) {
+      ctx.response.body = sendOk('success', 'success')
+    } else {
+      ctx.response.body = sendFail('fail', 'somethingError')
+    }
+  } else {
+    ctx.response.body = sendFail('fail', '请输入合适的名称')
+  }
+})
+
+// 文章相关
+router.post('/artical/imgs/add', uploadArticalImg.single('image'),async(ctx) => {
+  let userName = ctx.session.user.name
+  let file = ctx.req.file.filename
+  let user_id = await USER.findAll({attributes: ['user_id'], where:{user_name: userName}})  
+})
+
+router.get('/artical/add', async(ctx) => {
+  let userName = ctx.session.user.name
+  let res = await USER.findAll({attributes: ['user_id'], where: {user_name: userName}})
+  let {user_id} = res[0].dataValues
+  if (user_id) {
+    let userDir = userName + user_id
+    let dirPath = path.join(__dirname, '../public/artical/', userDir)
+    let fileMdName = new Date().getTime() + '.md'
+    let fileMd = dirPath + '/' + fileMdName
+    try {
+      let dir = await createDir(dirPath)
+      let res = await createFile(fileMd)
+      ctx.response.body = sendOk('success', fileMdName)
+    } catch (err) {
+      ctx.response.body = sendFial('fail', err)
+    }
+  } else {
+    ctx.response.body = sendFail('fail', '没有此用户')
+  }
 })
 module.exports = router
