@@ -16,6 +16,7 @@ const createDir = (dirPath) => {
     console.log(dirPath)
     fs.exists(dirPath, (res) => {
       if (res) {
+        console.log(res)
         resolve('文件夹已经存在')
       } else {
         fs.mkdir(dirPath, (err,res) => {

@@ -24,12 +24,14 @@ var headerImg = multer.diskStorage({
 var articalImg = multer.diskStorage({  
   //文件保存路径  
   destination: function (req, file, cb) {
+    console.log(articalImgPath)
     cb(null, articalImgPath)
   },  
   //修改文件名称  
-  filename: function (req, file, cb) {  
+  filename: function (req, file, cb) {
     var fileFormat = (file.originalname).split(".")
     let cookieIndex = req.rawHeaders.indexOf('cookie')
+    console.log(file)
     if (cookieIndex !== -1) {
       let cookieContent = req.rawHeaders[cookieIndex + 1].split('=')[1]
       cb(null, cookieContent + '-' + Date.now() + "." + fileFormat[fileFormat.length - 1])

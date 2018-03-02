@@ -1,12 +1,12 @@
 
 const sequelize = require('./config')
-const {USER, ARTICAL, COMMENT, LOVE, CONCERN} = require('./model.js')
+const {USER, ARTICAL, COMMENT, LOVE, CONCERN, ARTICALIMGS} = require('./model.js')
 
 
 function init_sql () {
   sequelize.authenticate()
     .then(() => {
-      let tables = [USER, ARTICAL, COMMENT, LOVE, CONCERN]
+      let tables = [USER, ARTICAL, COMMENT, LOVE, CONCERN, ARTICALIMGS]
       tables.map(e => {
         e.sync().then(res => {
           console.log(`${res} 初始化完成`)

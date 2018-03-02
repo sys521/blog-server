@@ -4,7 +4,7 @@ const {sendOk,
   deleteFile,
   createDir,
   createFile} = require('./tool.js')
-const {USER} = require('../db/model.js')
+const {USER, ARTICAL, ARTICALIMGS, CONCERN, LOVE} = require('../db/model.js')
 const fs = require('fs')
 const path = require('path')
 const {uploadHeaderImg, uploadArticalImg} = require('../storage')
@@ -53,9 +53,8 @@ router.post('/user/login', async (ctx, next) => {
   }
 })
 router.get('/user/info', async (ctx, next) => {
-  console.log(ctx.session)
   let userName = ctx.session.user.name
-  let res = await USER.findAll({attributes: ['user_email', 'user_displayName', 'user_header'], where: {user_name: userName}})
+  let res = await USER.findAll({attributes: ['user_email', 'user_displayName', 'user_header',], where: {user_name: userName}})
   console.log(res[0].dataValues)
   if (res[0].dataValues) {
     ctx.response.body = sendOk('success', res[0].dataValues)
@@ -65,7 +64,6 @@ router.get('/user/info', async (ctx, next) => {
 })
 router.post('/user/update/header', uploadHeaderImg.single('user_header'), async (ctx, next) => {
   let fileName = ctx.req.file.filename
-  console.log(fileName)
   let userName = ctx.session.user.name
   let oldFile = await USER.findAll({attributes: ['user_header'], where: {user_name: userName}})
   if (oldFile[0].dataValues) {
@@ -90,10 +88,24 @@ router.post('/user/displayname/update', async (ctx) => {
 })
 
 // 文章相关
-router.post('/artical/imgs/add', uploadArticalImg.single('image'),async(ctx) => {
+router.post('/artical/imgs/add/:id', uploadArticalImg.any(),async(ctx) => {
   let userName = ctx.session.user.name
-  let file = ctx.req.file.filename
-  let user_id = await USER.findAll({attributes: ['user_id'], where:{user_name: userName}})  
+  let files = ctx.req.files
+  console.log(files)
+  let artical_id = ctx.params.id
+  let res = await USER.findAll({attributes: ['user_id'], where:{user_name: userName}})
+  let addimgs = files.map(e => {
+    return ARTICALIMGS.create({artical_id, imgs_url: e.filename})
+  })
+  try {
+    let abb = await Promise.all(addimgs)
+    ctx.response.body = sendOk('success', 
+    files.map(e => {
+      return [e.fieldname, e.filename]
+    }))
+  } catch (err) {
+    ctx.response.body = sendFail('fail', err)
+  }
 })
 
 router.get('/artical/add', async(ctx) => {
@@ -101,19 +113,109 @@ router.get('/artical/add', async(ctx) => {
   let res = await USER.findAll({attributes: ['user_id'], where: {user_name: userName}})
   let {user_id} = res[0].dataValues
   if (user_id) {
-    let userDir = userName + user_id
-    let dirPath = path.join(__dirname, '../public/artical/', userDir)
-    let fileMdName = new Date().getTime() + '.md'
-    let fileMd = dirPath + '/' + fileMdName
     try {
-      let dir = await createDir(dirPath)
-      let res = await createFile(fileMd)
-      ctx.response.body = sendOk('success', fileMdName)
+      let res = await ARTICAL.create({user_id: user_id})
+      let artical_id = res.dataValues.artical_id
+      console.log(artical_id)
+      ctx.response.body = sendOk('success', artical_id)
     } catch (err) {
-      ctx.response.body = sendFial('fail', err)
+      ctx.response.body = sendFail('fail', err)
     }
   } else {
     ctx.response.body = sendFail('fail', '没有此用户')
+  }
+})
+router.post('/artical/update/', async(ctx) => {
+  console.log('我被更新了')
+  let userName = ctx.session.user.name
+  let { artical_id, artical_content, artical_abstract, artical_name} = ctx.request.body
+  try {
+    let res = await USER.findAll({attributes: ['user_id'], where:{user_name:userName}})
+    let user_id = res[0].dataValues.user_id
+    if (!artical_content) {
+      ctx.response.body = sendFail('fail', '文章内容为空，保存失败')
+    } else {
+      let artical = await ARTICAL.update({artical_content, artical_abstract, artical_name, artical_clicktimes:0},{where: {artical_id, user_id}})
+      ctx.response.body = sendOk('success', '文章保存成功')
+    }
+  } catch(err) {
+    ctx.response.body = sendFail('fail', '文章保存失败')
+    console.log(err)
+  }
+})
+router.post('/artical/editor', async(ctx) => {
+  let userName = ctx.session.user.name
+  let {artical_id} = ctx.request.body
+  try {
+    let user = await USER.findAll({attributes: ['user_id'], where:{user_name:userName}})
+    let user_id = user[0].dataValues.user_id
+    let artical = await ARTICAL.findAll({attributes: ['artical_content'], where: {user_id, artical_id}})
+    console.log(artical)
+    ctx.response.body = sendOk('success', artical[0].dataValues)
+  } catch (err) {
+    ctx.response.body = sendFail('fail', err)
+  }
+})
+router.post('/artical/remove/', async(ctx) => {
+  let user_name = ctx.session.user.name
+  console.log(user_name)
+  console.log(ctx.request.body)
+  let {artical_id} = ctx.request.body
+  console.log(artical_id)
+  try {
+    let user = await USER.findAll({attributes: ['user_id'], where:{user_name}})
+    let user_id = user[0].dataValues.user_id
+    let res = await ARTICAL.destroy({where:{artical_id,user_id}})
+    if (res === 1) {
+      ctx.response.body = sendOk('success')
+    }
+  } catch(err) {
+    console.log(err)
+    ctx.response.body = sendFail('error', err)
+  }
+})
+router.get('/artical/list', async (ctx) => {
+  let user_name = ctx.session.user.name
+  try {
+    let user = await USER.findAll({attributes: ['user_id'], where:{user_name}})
+    let user_id = user[0].dataValues.user_id
+    let artical =  ARTICAL.findAll({attributes:['artical_id','artical_name','artical_abstract', 'artical_status', 'artical_clicktimes'], where:{user_id}})
+    let love =  LOVE.count({attributes:['artical_id'],group:'artical_id', where:{user_id}})
+    let [articalCount, loveCount] = await Promise.all([artical,love])
+    let data = articalCount.map(e => {
+      loveCount.forEach(item => {
+        if (e.dataValues.artical_id === item.artical_id) {
+          e.dataValues.love = item.count
+        } else {
+          e.dataValues.love = null
+        }
+      })
+      return e.dataValues
+    })
+    console.log(data)
+    ctx.response.body = sendOk('success', data)
+  } catch (err) {
+    console.log(err)
+    ctx.response.body = sendFail('fail', err)
+  }
+})
+// author 相关
+router.get('/author/info', async (ctx) => {
+  let user_name = ctx.session.user.name
+  try {
+    let res = await USER.findAll({where:{user_name}})
+    let user_id = res[0].dataValues.user_id
+    let articalNum = ARTICAL.count({where:{user_id, artical_content:{
+      $not: null
+    }}})
+    let loveNum = LOVE.count({where:{user_id}})
+    let concernNum = CONCERN.count({where:{to_id: user_id}})
+    let data = await Promise.all([articalNum, loveNum, concernNum])
+    let obj = {articalNum: data[0], loveNum: data[1], concernNum: data[2]}
+    ctx.response.body = sendOk('success', obj)
+  } catch(err) {
+    console.log(err)
+    ctx.repsponse.body = sendFail('fail', err)
   }
 })
 module.exports = router

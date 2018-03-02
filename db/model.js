@@ -13,7 +13,7 @@ const USER = sequelize.define('users', {
 const ARTICAL = sequelize.define('articals', {
   artical_id: {type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true},
   artical_name: {type: Sequelize.STRING},
-  artical_abstract: {type: Sequelize.STRING},
+  artical_abstract: {type: Sequelize.TEXT},
   artical_content: {type: Sequelize.TEXT},
   artical_status: {type: Sequelize.STRING},
   artical_clicktimes: {type: Sequelize.INTEGER},
@@ -28,7 +28,7 @@ const ARTICAL = sequelize.define('articals', {
 
 const LOVE = sequelize.define('love', {
   love_id: {type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true},
-  from_id: {
+  user_id: {
     type: Sequelize.INTEGER,
     references: {
       model: USER,
@@ -65,14 +65,14 @@ const COMMENT = sequelize.define('comments', {
 
 const ARTICALIMGS = sequelize.define('articalimgs', {
   imgs_id: {type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
+  imgs_url: {type: Sequelize.STRING},
   artical_id: {
     type: Sequelize.INTEGER,
     references: {
       model: ARTICAL,
       key: 'artical_id'
     }
-  },
-  imgs_url: {type: Sequelize.STRING}
+  }
 })
 
 const CONCERN = sequelize.define('concern', {
@@ -98,5 +98,6 @@ module.exports = {
   ARTICAL,
   COMMENT,
   LOVE,
-  CONCERN
+  CONCERN,
+  ARTICALIMGS
 }
