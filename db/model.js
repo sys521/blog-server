@@ -20,13 +20,7 @@ const ARTICAL = sequelize.define('articals', {
 })
 
 const LOVE = sequelize.define('love', {
-  love_id: {type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true},
-  user_id: {
-    type: Sequelize.INTEGER
-  },
-  artical_id: {
-    type: Sequelize.INTEGER
-  }
+  love_id: {type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true}
 })
 
 const COMMENT = sequelize.define('comments', {
@@ -50,15 +44,11 @@ const ARTICALIMGS = sequelize.define('articalimgs', {
 
 const CONCERN = sequelize.define('concern', {
   concern_id: {type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true},
-  from_id: {
-    type: Sequelize.INTEGER,
-  },
   to_id: {
     type: Sequelize.INTEGER,
   }
 })
 
-ARTICAL.belongsTo(USER,{foreignKey: 'user_id'})
 module.exports = {
   USER,
   ARTICAL,

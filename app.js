@@ -74,7 +74,8 @@ app.use(async (ctx, next) => {
       console.log(user_name)
       try {
         let res = await USER.findAll({arttibuts:['user_id'], where:{user_name}})
-        console.log(res)
+        let user_id = res[0].dataValues.user_id
+        ctx.state.user_id = user_id
         await next()
       } catch(err) {
         console.log(err)

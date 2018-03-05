@@ -2,6 +2,10 @@
 const sequelize = require('./config')
 const {USER, ARTICAL, COMMENT, LOVE, CONCERN, ARTICALIMGS} = require('./model.js')
 
+USER.hasMany(ARTICAL,{foreignKey: 'user_id'})
+USER.hasMany(LOVE, {foreignKey: 'user_id'})
+ARTICAL.hasMany(LOVE, {foreignKey: 'artical_id'})
+USER.hasMany(CONCERN, {foreignKey: 'from_id'})
 
 function init_sql () {
   sequelize.authenticate()
