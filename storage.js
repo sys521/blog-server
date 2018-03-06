@@ -14,9 +14,11 @@ var headerImg = multer.diskStorage({
   //修改文件名称  
   filename: function (req, file, cb) {  
     var fileFormat = (file.originalname).split(".")
+    console.log(fileFormat,'**************************')
     let cookieIndex = req.rawHeaders.indexOf('cookie')
     if (cookieIndex !== -1) {
-      let cookieContent = req.rawHeaders[cookieIndex + 1].split('=')[1]
+      let cookieContent = req.rawHeaders[cookieIndex + 1].split('=')[1].slice(0,10)
+      console.log(cookieContent)
       cb(null, cookieContent + '-' + Date.now() + "." + fileFormat[fileFormat.length - 1])
     }
   }

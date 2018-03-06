@@ -53,6 +53,7 @@ router.post('/user/login', async (ctx, next) => {
   }
 })
 router.get('/user/info', async (ctx, next) => {
+  console.log(ctx.session)
   let userName = ctx.session.user.name
   let res = await USER.findAll({attributes: ['user_email', 'user_displayName', 'user_header',], where: {user_name: userName}})
   console.log(res[0].dataValues)
@@ -70,6 +71,7 @@ router.post('/user/update/header', uploadHeaderImg.single('user_header'), async 
     deleteFile(path.join(__dirname, '../public/header-imgs'), oldFile[0].dataValues.user_header)
   }
   let res = await USER.update({'user_header': fileName},{where: {user_name: userName}})
+  console.log(fileName)
   ctx.response.body = sendOk('success', fileName)
 })
 router.post('/user/displayname/update', async (ctx) => {
@@ -209,7 +211,7 @@ router.get('/author/info', async (ctx) => {
       $not: null
     }}})
     let loveNum = LOVE.count({where:{user_id}})
-    let concernNum = CONCERN.count({where:{to_id: user_id}})
+    let concernNum = CONCERN.count({where:{from_id: user_id}})
     let data = await Promise.all([articalNum, loveNum, concernNum])
     let obj = {articalNum: data[0], loveNum: data[1], concernNum: data[2]}
     ctx.response.body = sendOk('success', obj)
@@ -220,9 +222,47 @@ router.get('/author/info', async (ctx) => {
 })
 // concern 相关
 router.get('/concern/already', async (ctx) => {
-  console.log(ctx.state)
-  let concern = CONCERN.findAll({attributes: ['to_id'],where: {from_id: user_id}})
-  console.log(concern)
-  
+  let user_id = ctx.state.user_id
+  let concern = await CONCERN.findAll({where:{from_id: user_id}})
+  try{
+    let to_id = concern.map(e => {
+      return USER.findAll({attributes: ['user_id','user_displayName'], where:{user_id: e.to_id}})
+    })
+    let data = await Promise.all(to_id)
+    data = data.map(e => e[0])
+    ctx.response.body = sendOk('sucess', data)
+  } catch(err) {
+    ctx.response.body = sendFail('fail', err)
+  }
+
+})
+router.get('/concern/recomend', async(ctx) => {
+  let user_id = ctx.state.user_id
+  try {
+    let concern = await CONCERN.findAll({where:{from_id: user_id}})
+    let to_id = concern.map(e => {
+      return e.to_id
+    })
+    to_id = to_id.concat([user_id])
+    let recomend = await USER.findAll({attributes: ['user_id', 'user_displayName'], where:{user_id:{$notIn: to_id}}})
+    ctx.response.body = sendOk('success', recomend)
+  } catch(err) {
+    console.log(err)
+    ctx.response.body = sendFail('fail', err)
+  }
+})
+router.post('/concern/add', async(ctx) => {
+  let user_id = ctx.state.user_id
+  let to_id = ctx.request.body.to_id
+  if (to_id) {
+    try {
+      let res = await CONCERN.upsert({to_id, from_id: user_id})
+      ctx.response.body = sendOk('success', 'success')
+    } catch(err) {
+      ctx.response.body = sendFail('fail', err)
+    }
+  } else {
+    ctx.response.body = sendFail('fail', '请传入正确的用户id')
+  }
 })
 module.exports = router

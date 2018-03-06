@@ -68,25 +68,24 @@ app.use(async (ctx, next) => {
 app.use(async (ctx, next) => {
   let urlArr = ctx.request.url.split('/')
   console.log(urlArr)
-  if (urlArr[1] === 'user' && urlArr[2] !== 'check' && urlArr[2] !== 'add' && urlArr[2] !== 'login') {
-    if (ctx.session.user && ctx.session.user.name) {
-      let user_name = ctx.session.user.name
-      console.log(user_name)
+  if (urlArr[1] === 'user' && (urlArr[2] === 'check' || urlArr[2] === 'add' || urlArr[2] === 'login')) {
+    console.log('xxxxxxxxxxxxxxxxxxxxxxx')
+    await next()
+  } else {
+    if (ctx.session.user && ctx.session.user.name){
+      let userName = ctx.session.user.name
       try {
-        let res = await USER.findAll({arttibuts:['user_id'], where:{user_name}})
+        let res = await USER.findAll({arttibuts:['user_id'], where:{user_name:userName}})
         let user_id = res[0].dataValues.user_id
         ctx.state.user_id = user_id
-        console.log(ctx.state)
+        console.log('_____________________________')
         await next()
       } catch(err) {
-        console.log(err)
+        ctx.response.body = sendFail('fail', '未找到该用户')
       }
     } else {
-      ctx.response.body = sendFail('fail', '未登录或者缓存失效')
+      ctx.response.body = sendFail('fail', '未登陆或者缓存失效')
     }
-  } else {
-    console.log(ctx.session)
-    await next()
   }
 })
 // routes
