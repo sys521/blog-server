@@ -53,7 +53,6 @@ router.post('/user/login', async (ctx, next) => {
   }
 })
 router.get('/user/info', async (ctx, next) => {
-  console.log(ctx.state, '************************')
   let userName = ctx.session.user.name
   let res = await USER.findAll({attributes: ['user_email', 'user_displayName', 'user_header',], where: {user_name: userName}})
   console.log(res[0].dataValues)
@@ -220,7 +219,10 @@ router.get('/author/info', async (ctx) => {
   }
 })
 // concern 相关
-router.get('/concern/list', async (ctx) => {
+router.get('/concern/already', async (ctx) => {
   console.log(ctx.state)
+  let concern = CONCERN.findAll({attributes: ['to_id'],where: {from_id: user_id}})
+  console.log(concern)
+  
 })
 module.exports = router
