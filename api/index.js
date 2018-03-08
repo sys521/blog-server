@@ -226,7 +226,7 @@ router.get('/concern/already', async (ctx) => {
   let concern = await CONCERN.findAll({where:{from_id: user_id}})
   try{
     let to_id = concern.map(e => {
-      return USER.findAll({attributes: ['user_id','user_displayName'], where:{user_id: e.to_id}})
+      return USER.findAll({attributes: ['user_id','user_displayName', 'user_header'], where:{user_id: e.to_id}})
     })
     let data = await Promise.all(to_id)
     data = data.map(e => e[0])
@@ -244,7 +244,7 @@ router.get('/concern/recomend', async(ctx) => {
       return e.to_id
     })
     to_id = to_id.concat([user_id])
-    let recomend = await USER.findAll({attributes: ['user_id', 'user_displayName'], where:{user_id:{$notIn: to_id}}})
+    let recomend = await USER.findAll({attributes: ['user_id', 'user_displayName', 'user_header'], where:{user_id:{$notIn: to_id}}})
     ctx.response.body = sendOk('success', recomend)
   } catch(err) {
     console.log(err)
