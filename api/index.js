@@ -54,8 +54,9 @@ router.post('/user/login', async (ctx, next) => {
 })
 router.get('/user/info', async (ctx, next) => {
   console.log(ctx.session)
+  console.log(ctx.params)
   let userName = ctx.session.user.name
-  let res = await USER.findAll({attributes: ['user_email', 'user_displayName', 'user_header',], where: {user_name: userName}})
+  let res = await USER.findAll({attributes: ['user_id','user_email', 'user_displayName', 'user_header',], where: {user_name: userName}})
   console.log(res[0].dataValues)
   if (res[0].dataValues) {
     ctx.response.body = sendOk('success', res[0].dataValues)
@@ -176,11 +177,11 @@ router.post('/artical/remove/', async(ctx) => {
     ctx.response.body = sendFail('error', err)
   }
 })
-router.get('/artical/list', async (ctx) => {
+router.get('/artical/list/:id', async (ctx) => {
   let user_name = ctx.session.user.name
   try {
-    let user = await USER.findAll({attributes: ['user_id'], where:{user_name}})
-    let user_id = user[0].dataValues.user_id
+    let user_id = ctx.params.id
+    console.log(ctx.params)
     let artical =  ARTICAL.findAll({attributes:['artical_id','artical_name','artical_abstract', 'artical_status', 'artical_clicktimes'], where:{user_id}})
     let love =  LOVE.count({attributes:['artical_id'],group:'artical_id', where:{user_id}})
     let [articalCount, loveCount] = await Promise.all([artical,love])
@@ -202,11 +203,10 @@ router.get('/artical/list', async (ctx) => {
   }
 })
 // author 相关
-router.get('/author/info', async (ctx) => {
+router.get('/author/info/:id', async (ctx) => {
   let user_name = ctx.session.user.name
   try {
-    let res = await USER.findAll({where:{user_name}})
-    let user_id = res[0].dataValues.user_id
+    let user_id = ctx.params.id
     let articalNum = ARTICAL.count({where:{user_id, artical_content:{
       $not: null
     }}})
