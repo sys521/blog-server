@@ -52,11 +52,21 @@ router.post('/user/login', async (ctx, next) => {
     ctx.response.body = sendFail('not right commit', 'fail')
   }
 })
-router.get('/user/info', async (ctx, next) => {
+router.get('/user/myDetail', async (ctx) => {
   console.log(ctx.session)
   console.log(ctx.params)
   let userName = ctx.session.user.name
   let res = await USER.findAll({attributes: ['user_id','user_email', 'user_displayName', 'user_header',], where: {user_name: userName}})
+  console.log(res[0].dataValues)
+  if (res[0].dataValues) {
+    ctx.response.body = sendOk('success', res[0].dataValues)
+  } else {
+    ctx.response.body = sendFail('未找到该用户', 'fail')
+  }
+})
+router.get('/user/info/:id', async (ctx, next) => {
+  let user_id = ctx.params.id
+  let res = await USER.findAll({attributes: ['user_id','user_email', 'user_displayName', 'user_header',], where: {user_id}})
   console.log(res[0].dataValues)
   if (res[0].dataValues) {
     ctx.response.body = sendOk('success', res[0].dataValues)
@@ -128,6 +138,26 @@ router.get('/artical/add', async(ctx) => {
     ctx.response.body = sendFail('fail', '没有此用户')
   }
 })
+router.get('/artical/read/:id', async(ctx) => {
+  let user_id = ctx.state.user_id
+  let artical_id = ctx.params.id
+  try {
+    let res = await ARTICAL.findAll({attributes: ['user_id', 'artical_clicktimes'], where: {artical_id}})
+    console.log(typeof res[0].dataValues.user_id)
+    if (user_id === res[0].dataValues.user_id) {
+      ctx.resposne.body = sendOk('success', 'success')
+    } else {
+      console.log(res[0].dataValues.artical_clicktimes)
+      let clickTimes = res[0].dataValues.artical_clicktimes + 1
+      console.log(clickTimes)
+      let read = ARTICAL.update({artical_clicktimes: clickTimes}, {where: {artical_id}})
+      ctx.response.body = sendOk('success', '增加成功')
+    }
+  } catch(err) {
+    console.log(err)
+    ctx.response.body = sendFail('fail', err)
+  }
+})
 router.post('/artical/update/', async(ctx) => {
   console.log('我被更新了')
   let userName = ctx.session.user.name
@@ -147,12 +177,9 @@ router.post('/artical/update/', async(ctx) => {
   }
 })
 router.post('/artical/editor', async(ctx) => {
-  let userName = ctx.session.user.name
   let {artical_id} = ctx.request.body
   try {
-    let user = await USER.findAll({attributes: ['user_id'], where:{user_name:userName}})
-    let user_id = user[0].dataValues.user_id
-    let artical = await ARTICAL.findAll({attributes: ['artical_content'], where: {user_id, artical_id}})
+    let artical = await ARTICAL.findAll({attributes: ['artical_content'], where: {artical_id}})
     console.log(artical)
     ctx.response.body = sendOk('success', artical[0].dataValues)
   } catch (err) {
@@ -182,7 +209,7 @@ router.get('/artical/list/:id', async (ctx) => {
   try {
     let user_id = ctx.params.id
     console.log(ctx.params)
-    let artical =  ARTICAL.findAll({attributes:['artical_id','artical_name','artical_abstract', 'artical_status', 'artical_clicktimes'], where:{user_id}})
+    let artical =  ARTICAL.findAll({attributes:['artical_id','artical_name','artical_abstract', 'artical_status', 'artical_clicktimes', 'user_id'], where:{user_id}})
     let love =  LOVE.count({attributes:['artical_id'],group:'artical_id', where:{user_id}})
     let [articalCount, loveCount] = await Promise.all([artical,love])
     let data = articalCount.map(e => {
@@ -210,10 +237,12 @@ router.get('/author/info/:id', async (ctx) => {
     let articalNum = ARTICAL.count({where:{user_id, artical_content:{
       $not: null
     }}})
-    let loveNum = LOVE.count({where:{user_id}})
+    let loveNum = LOVE.count({where:{to_id:user_id}})
     let concernNum = CONCERN.count({where:{from_id: user_id}})
-    let data = await Promise.all([articalNum, loveNum, concernNum])
-    let obj = {articalNum: data[0], loveNum: data[1], concernNum: data[2]}
+    let user = USER.findAll({attributes: ['user_displayName', 'user_header', 'user_id'], where:{user_id}})
+    let data = await Promise.all([articalNum, loveNum, concernNum, user])
+    console.log(data[3][0].dataValues)
+    let obj = {articalNum: data[0], loveNum: data[1], concernNum: data[2], userInfo: data[3][0].dataValues}
     ctx.response.body = sendOk('success', obj)
   } catch(err) {
     console.log(err)
@@ -254,15 +283,49 @@ router.get('/concern/recomend', async(ctx) => {
 router.post('/concern/add', async(ctx) => {
   let user_id = ctx.state.user_id
   let to_id = ctx.request.body.to_id
-  if (to_id) {
-    try {
-      let res = await CONCERN.upsert({to_id, from_id: user_id})
-      ctx.response.body = sendOk('success', 'success')
-    } catch(err) {
-      ctx.response.body = sendFail('fail', err)
-    }
+  if (user_id === to_id) {
+    ctx.response.body = sendOk('success', 'success')
   } else {
-    ctx.response.body = sendFail('fail', '请传入正确的用户id')
+    if (to_id) {
+      try {
+        let res = await CONCERN.upsert({to_id, from_id: user_id})
+        ctx.response.body = sendOk('success', 'success')
+      } catch(err) {
+        ctx.response.body = sendFail('fail', err)
+      }
+    } else {
+      ctx.response.body = sendFail('fail', '请传入正确的用户id')
+    }
+  }
+})
+// love 相关
+router.get('/love/query/:id', async (ctx) => {
+  let user_id = ctx.state.user_id
+  let artical_id = ctx.params.id
+  console.log(user_id)
+  try {
+    let res = await LOVE.findAll({where: {user_id:user_id, artical_id: artical_id}})
+    if (!res.length) {
+      ctx.response.body = sendOk('success', false)
+    } else {
+      ctx.response.body = sendOk('success', true)
+    }
+  } catch(err) {
+    console.log(err)
+    ctx.response.body = sendFail('fail', err)
+  }
+})
+router.get('/love/update/:id', async(ctx) => {
+  let user_id = ctx.state.user_id
+  let artical_id = ctx.params.id
+  try {
+    let author = await ARTICAL.findAll({attributes:['user_id'], where:{artical_id:artical_id}})
+    let author_id = author[0].dataValues.user_id
+    let res = await LOVE.upsert({artical_id, user_id: user_id, to_id: author_id})
+    ctx.response.body = sendOk('success', 'sueccess')
+  }catch(err) {
+    console.log(err)
+    ctx.response.body = sendFail('fail', err)
   }
 })
 module.exports = router

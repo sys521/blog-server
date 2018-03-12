@@ -37,7 +37,7 @@ const config = {
   password: '123456',
   database: 'blog'
 }
-const limit_time = 1000 * 60 * 60
+const limit_time = 1000 * 60 * 60 * 24
 app.use(session({
   key: 'user_id',
   store: new MysqlStore(config),

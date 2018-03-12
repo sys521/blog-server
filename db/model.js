@@ -20,7 +20,8 @@ const ARTICAL = sequelize.define('articals', {
 })
 
 const LOVE = sequelize.define('love', {
-  love_id: {type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true}
+  love_id: {type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true},
+  to_id: {type: Sequelize.INTEGER}
 })
 
 const COMMENT = sequelize.define('comments', {

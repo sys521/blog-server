@@ -17,7 +17,7 @@ var headerImg = multer.diskStorage({
     console.log(fileFormat,'**************************')
     let cookieIndex = req.rawHeaders.indexOf('cookie')
     if (cookieIndex !== -1) {
-      let cookieContent = req.rawHeaders[cookieIndex + 1].split('=')[1].slice(0,10)
+      let cookieContent = req.rawHeaders[cookieIndex + 1].split('=')[1].slice(0,5)
       console.log(cookieContent)
       cb(null, cookieContent + '-' + Date.now() + "." + fileFormat[fileFormat.length - 1])
     }
@@ -35,7 +35,7 @@ var articalImg = multer.diskStorage({
     let cookieIndex = req.rawHeaders.indexOf('cookie')
     console.log(file)
     if (cookieIndex !== -1) {
-      let cookieContent = req.rawHeaders[cookieIndex + 1].split('=')[1]
+      let cookieContent = req.rawHeaders[cookieIndex + 1].split('=')[1].slice(0-5)
       cb(null, cookieContent + '-' + Date.now() + "." + fileFormat[fileFormat.length - 1])
     }
   }
